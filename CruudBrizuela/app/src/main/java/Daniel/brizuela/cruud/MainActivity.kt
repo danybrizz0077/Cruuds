@@ -1,6 +1,8 @@
 package Daniel.brizuela.cruud
 
 import Modelo.ClaseConexion
+import Modelo.dataClaseProductos
+import RecyclerViewHelper.Adaptador
 import android.os.Bundle
 import android.provider.Settings.Global
 import android.widget.Button
@@ -9,9 +11,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,5 +53,36 @@ class MainActivity : AppCompatActivity() {
                 addProductos.executeUpdate()
             }
         }
+        ///////////////////////////////////////////////////
+        val RcvProducto = findViewById<RecyclerView>(R.id.RcvProductos)
+
+        //asignar un layout al RecyclerView
+        RcvProducto.layoutManager = LinearLayoutManager(this)
+
+        // Funcion para obtener datos
+        fun obtenerDatos(): List<dataClaseProductos>{
+            val objConexion = ClaseConexion().CadenaConexion()
+            val statement = objConexion?.createStatement()
+            val resultSet = statement?.executeQuery("select * from tbproductos")!!
+
+            val productos = mutableListOf<dataClaseProductos>()
+            while (resultSet.next()){
+                val nombre = resultSet.getString("nombreProducto")
+                val producto = dataClaseProductos(nombre)
+                productos.add(producto)
+            }
+            return productos
+        }
+
+        //asignar un adaptador
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val productosDB = obtenerDatos()
+            withContext(Dispatchers.Main){
+                val miAdapter = Adaptador(productosDB)
+                RcvProducto.adapter = miAdapter
+            }
+        }
+
     }
 }
