@@ -1,10 +1,9 @@
 package Daniel.brizuela.cruud
 
+import Adaptor
 import Modelo.ClaseConexion
 import Modelo.dataClaseProductos
-import RecyclerViewHelper.Adaptador
 import android.os.Bundle
-import android.provider.Settings.Global
 import android.widget.Button
 import android.widget.EditText
 import androidx.activity.enableEdgeToEdge
@@ -16,7 +15,6 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -37,23 +35,14 @@ class MainActivity : AppCompatActivity() {
         val txtCantidadProducto = findViewById<EditText>(R.id.txtCantProducto)
         val btnAgregar = findViewById<Button>(R.id.btnAgregar)
 
-        //- Programar el boton
-
-        btnAgregar.setOnClickListener {
-            GlobalScope.launch(Dispatchers.IO){
-                //- guardar datos
-                //1- Creo un objeto de la clase conexion
-                val claseConexion = ClaseConexion().CadenaConexion()
-
-                //-2 Creo una variable que tenga PreparedStatement
-                val addProductos = claseConexion?.prepareStatement("insert into tbProductos( nombreProducto, precio, cantidad) values(?,?,?)")!!
-                addProductos.setString(1, txtNomProducto.text.toString())
-                addProductos.setInt(2,txtPrecioProducto.text.toString().toInt())
-                addProductos.setInt(3, txtCantidadProducto.text.toString().toInt())
-                addProductos.executeUpdate()
-            }
+        fun limpiar (){
+            txtNomProducto.setText("")
+            txtPrecioProducto.setText("")
+            txtCantidadProducto.setText("")
         }
-        ///////////////////////////////////////////////////
+
+
+        //////////////////TODO: mostar datos ///////////////////////////
         val RcvProducto = findViewById<RecyclerView>(R.id.RcvProductos)
 
         //asignar un layout al RecyclerView
@@ -79,9 +68,34 @@ class MainActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             val productosDB = obtenerDatos()
             withContext(Dispatchers.Main){
-                val miAdapter = Adaptador(productosDB)
+                val miAdapter = Adaptor(productosDB)
                 RcvProducto.adapter = miAdapter
             }
+        }
+
+        ///////////////////// TODO: Guardar productos //////////////////////////
+
+        //- Programar el boton
+
+        btnAgregar.setOnClickListener {
+            GlobalScope.launch(Dispatchers.IO){
+                //- guardar datos
+                //1- Creo un objeto de la clase conexion
+                val claseConexion = ClaseConexion().CadenaConexion()
+
+                //-2 Creo una variable que tenga PreparedStatement
+                val addProductos = claseConexion?.prepareStatement("insert into tbProductos( nombreProducto, precio, cantidad) values(?,?,?)")!!
+                addProductos.setString(1, txtNomProducto.text.toString())
+                addProductos.setInt(2,txtPrecioProducto.text.toString().toInt())
+                addProductos.setInt(3, txtCantidadProducto.text.toString().toInt())
+                addProductos.executeUpdate()
+
+                val nuevosProductos = obtenerDatos()
+                withContext(Dispatchers.Main){
+                    (RcvProducto.adapter as? Adaptor)?.actualizarLista(nuevosProductos)
+                }
+            }
+            //limpiar()
         }
 
     }
